@@ -24,24 +24,50 @@ for skill in "$REPO_DIR"/*/; do
   link "$skill" "$AGENTS_SKILLS/$(basename "$skill")"
 done
 
-# 2. Every Claude config dir -> per-skill links to everything in ~/.agents/skills
-#    (skips the account-synced bucket, which each Claude account manages itself)
+# 2. Collect Claude config dirs: the defaults, CLAUDE_CONFIG_DIR, and every
+#    Claude provider instance T3 Code has configured with its own home path.
 CLAUDE_DIRS=("$HOME/.claude" "$HOME/.claude-ondra")
 [ -n "${CLAUDE_CONFIG_DIR:-}" ] && CLAUDE_DIRS+=("$CLAUDE_CONFIG_DIR")
+T3_SETTINGS="${T3CODE_HOME:-$HOME/.t3}/userdata/settings.json"
+if [ -f "$T3_SETTINGS" ] && command -v python3 >/dev/null 2>&1; then
+  while IFS= read -r p; do
+    [ -n "$p" ] && CLAUDE_DIRS+=("$p")
+  done < <(python3 -I - "$T3_SETTINGS" <<'PY'
+import json, os, sys
+try:
+    data = json.load(open(sys.argv[1]))
+except Exception:
+    sys.exit(0)
+for inst in data.get("providerInstances", {}).values():
+    if inst.get("driver") != "claudeAgent":
+        continue
+    home = (inst.get("config") or {}).get("homePath") or ""
+    if home:
+        print(os.path.expanduser(home))
+PY
+)
+fi
+
+# 3. Every Claude config dir -> per-skill links to everything in ~/.agents/skills
+#    (skips the account-synced bucket, which each Claude account manages itself)
 for cfg in "${CLAUDE_DIRS[@]}"; do
   [ -d "$cfg" ] || continue
   dest="$cfg/skills"
   if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$AGENTS_SKILLS" ]; then
-    continue  # whole folder already points at the shared library
+    echo "ok: $dest already points at $AGENTS_SKILLS"
+    continue
   fi
   mkdir -p "$dest"
+  n=0
   for skill in "$AGENTS_SKILLS"/*/; do
     skill="${skill%/}"
     name="$(basename "$skill")"
     [ "$name" = synced ] && continue
     [ -f "$skill/SKILL.md" ] || continue
     link "$skill" "$dest/$name"
+    n=$((n+1))
   done
+  echo "ok: $dest has links for $n skills"
 done
 
 echo "skills linked from $REPO_DIR"
