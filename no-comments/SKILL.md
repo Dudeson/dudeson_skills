@@ -13,9 +13,9 @@ The caller's files or diff. Otherwise the current diff against the base branch (
 
 ## Keep list
 
-These survive untouched:
+These survive untouched. A repo that documents its own comment policy (`CODING_STANDARDS.md`, `CONTRIBUTING.md`, `AGENTS.md`) overrides this list.
 
-- Doc comments on a public API: exported functions, types, modules.
+- Doc comments in the language's doc-comment form: `/** */` in TS/JS, a docstring in Python, `///` in Rust. A `//` or `#` run above an exported symbol is an ordinary comment and goes through the Steps like any other.
 - License and legal headers.
 - Issue, RFC, or spec links that explain a constraint the code cannot express.
 - Tool directives: `prettier-ignore`, `eslint-disable` and `@ts-expect-error` with a reason, pragmas, shebangs.
@@ -27,8 +27,9 @@ These survive untouched:
    - **Nothing the reader needs.** Narration of the next line, section banners, commented-out code, and decision history (who agreed what, when; git holds that). Delete.
    - **A reason the code could show.** Delete it and make the code show it: rename the symbol, extract a named function, pull the magic value into a named constant, add a type. Same file, behaviour unchanged.
    - **A reason no local refactor can carry.** Keep it, cut to one line.
-2. Bare suppressions (`eslint-disable`, `@ts-ignore` with no reason): make the code pass the rule. If it cannot, switch `@ts-ignore` to `@ts-expect-error` and put the reason on the same line.
-3. Run the repo's typecheck and lint. Done when every comment in scope is deleted, on the keep list, or kept with a one-line reason, and the checks are green.
+2. A `//` or `#` run above an export that survived step 1 is rewritten in the doc-comment form, one line where it fits.
+3. Bare suppressions (`eslint-disable`, `@ts-ignore` with no reason): make the code pass the rule. If it cannot, switch `@ts-ignore` to `@ts-expect-error` and put the reason on the same line.
+4. Run the repo's typecheck and lint. Done when every comment in scope is deleted, on the keep list, or kept with a one-line reason, and the checks are green.
 
 ## Report
 
