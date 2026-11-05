@@ -17,6 +17,13 @@ Runs inside T3 Code. `watch_pull_request` wakes this thread on failed checks, pa
 2. Check out the head branch and pull it.
 3. Run one full **sweep** (below) on the PR as it stands. The watch only wakes you for events after it starts, so anything already on the PR is yours now.
 4. `watch_pull_request` the PR, then end the turn.
+5. Only when this thread did work before `/babysit-pr` was invoked (implementation, reviews, browser checks), compact it after the watch starts and before the turn ends:
+   1. Load `mcp__t3-code__orchestrator_capabilities` and `mcp__t3-code__t3_thread_send` with ToolSearch. Both are deferred.
+   2. Call `orchestrator_capabilities`. It returns this thread's id as `parentThreadId`.
+   3. Call `t3_thread_send` with `threadId: <that id>`, `message: "/compact"` and `mode: "queue"`. The text must be exactly `/compact`; T3 matches the whole message.
+   4. End the turn. T3 runs the compaction as the next turn, and the watch stays on.
+
+   A thread that started with `/babysit-pr` skips this step. Its context is already small.
 
 ## Sweep
 
@@ -72,6 +79,21 @@ One commit per concern, message in the style of `git log` for that repo. The pro
 
 End every sweep with a short chat message: what was wrong, what you pushed (commit SHAs), what is still pending. Then end the turn. The watch stays on; calling `watch_pull_request` again is only for a fresh start.
 
+## Dropped watch
+
+T3 sends "stopped watching pull request" after 8 failed reads. Follow this section, not the notice.
+
+1. Run one sweep with `gh`, then continue here instead of ending the turn.
+2. Read T3's reason:
+   ```
+   grep -h 'pull request watch check failed' ~/.t3/userdata/logs/server.trace.ndjson* | grep '<owner>/<repo>#<n>\\"' | grep -o 'reason\\": \\"[a-z-]*' | sort | uniq -c
+   ```
+   No lines: run the `ls-remote` check in step 3 anyway.
+3. `not-found`: run `git ls-remote origin refs/pull/<n>/head`.
+   - Empty: GitHub lost the PR's head ref, and every re-arm fails the same way. Hand back naming the missing `refs/pull/<n>/head`: the next push to the head branch should restore it; closing and reopening does not.
+   - Present: T3's credential can't see the repo. Hand back with that.
+4. Any other reason: re-arm once. A second drop in the same run is a handback.
+
 ## Handback
 
 Hand back on any of:
@@ -80,5 +102,6 @@ Hand back on any of:
 - **Two strikes** on one check.
 - **Design question** from a reviewer.
 - **Changes requested** by a human that you would decline.
+- **Dropped watch**, per the section above.
 
 On handback: `unwatch_pull_request`, then a final message with the PR URL, head SHA, check and review state, and the single decision the author needs to make. Merging stays with the author.
