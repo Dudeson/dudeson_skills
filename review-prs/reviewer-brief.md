@@ -13,7 +13,9 @@ Run it from the worktree with its questions already answered:
 - **Fixed point**: the one in your inputs.
 - **Spec**: the ticket whose key sits in the PR title or the head branch name, such as `ABC-1234`, fetched with the issue-tracker tools you have, plus the PR body from `gh pr view <n> --json body`. With no ticket in reach, the Spec axis reports "no spec available" and the review continues on Standards alone.
 - **Issue tracker doc**: skip the `docs/agents/issue-tracker.md` check.
-- **Sub-agents**: if you cannot spawn the two axis sub-agents, run both axes yourself, Standards then Spec, each from the brief `code-review` writes for it.
+- **Sub-agents**: spawn the Standards and Spec sub-agents `code-review` describes, whatever the size of the diff. Send both in one message with `run_in_background: false`, so they run in parallel and you hold both reports when the call returns. Only when the Agent tool is absent from your tool list, run both axes yourself, Standards then Spec, each from the brief `code-review` writes for it, and open your return with `NOTE: axes run inline, no Agent tool`.
+
+Step 1 is done when you hold both axis reports, and the Standards report names the standards files it read.
 
 Scope is the frontend paths in your inputs. Backend hunks are context for understanding the contract, never a source of findings.
 
@@ -67,6 +69,8 @@ Return exactly this, nothing else:
 
 ```
 Spec: <ticket key, or "no spec available">
+Standards read: <the standards files the Standards axis read, comma-separated, or "none found">
+Axes: <sub-agents | inline>
 
 FINDINGS
 1. <bug | spec | smell> | <path> | <line> | <inline | body>

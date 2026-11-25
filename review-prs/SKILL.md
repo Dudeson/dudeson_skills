@@ -54,6 +54,8 @@ Then dispatch one reviewer per PR, all in a single message so they run in parall
 
 Keep the brief out of your own context. It belongs to the reviewer.
 
+A return counts only when it carries its `Spec:`, `Standards read:` and `Axes:` lines. Without them, the PR's outcome is `review failed: axes not run`, and its findings stay unposted.
+
 Once every reviewer has returned its findings or an error, remove every worktree and ref this run created.
 
 Done when `git worktree list` and `git for-each-ref refs/review` show nothing from this run.
@@ -88,5 +90,6 @@ Under the table, per PR:
 - **`--no-post`**: every finding in full, `path:line` then the comment text, ready to post as written.
 - **Dropped**: the findings the reviewer dropped, one line each with the reason. That list is how the user checks the bar is set right.
 - **Note**: any `NOTE` line a reviewer returned, as written, and "no spec available" when its `Spec:` line says so.
+- **Axes**: the reviewer's `Axes:` and `Standards read:` lines, as written.
 
 The run is done when every queued PR has a row.
