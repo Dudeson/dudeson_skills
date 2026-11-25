@@ -1,6 +1,15 @@
-# gh recipes for check-prs
+# gh recipes for review-prs
 
-Run from the repo root. `gh` fills `{owner}` and `{repo}` itself. `<me>` is the login from `gh api user --jq .login`; substitute it as you do `<n>`.
+`gh` fills `{owner}` and `{repo}` itself. `<me>` is the login from `gh api user --jq .login`; substitute it as you do `<n>`.
+
+## Repo
+
+```
+git rev-parse --show-toplevel
+gh repo view --json nameWithOwner --jq .nameWithOwner
+```
+
+Either one failing means the current directory is not in a GitHub repo. Run every other call from the top level the first one prints.
 
 ## Discover
 
@@ -25,6 +34,8 @@ gh api "repos/{owner}/{repo}/pulls/<n>/reviews" --paginate \
 ```
 
 `state: PENDING` is an unsubmitted review the user started by hand. The latest submitted review is the last entry with any other state; its `commit_id` is the re-review fixed point.
+
+The approval stands when the last entry with state `APPROVED`, `CHANGES_REQUESTED` or `DISMISSED` is `APPROVED`. A later `COMMENTED` review leaves it standing.
 
 ## Fetch
 

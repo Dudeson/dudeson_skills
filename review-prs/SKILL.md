@@ -1,11 +1,11 @@
 ---
-name: check-prs
-description: Review the frontend PRs where my review is requested and post the findings worth raising as one GitHub comment review per PR. Pass PR numbers to review exactly those, --no-post to get the review in chat only.
+name: review-prs
+description: Review the frontend PRs in the current repo where my review is requested and post the findings worth raising as one GitHub comment review per PR. Pass PR numbers to review exactly those, --no-post to get the review in chat only.
 argument-hint: "[pr ...] [--no-post]"
 disable-model-invocation: true
 ---
 
-# Check PRs
+# Review PRs
 
 You are the dispatcher. You build the **queue**, hand each PR to its own **reviewer** sub-agent, and post what comes back as one GitHub review per PR. The review goes out under the user's name, so it is always a comment review: approving and requesting changes stay with the user.
 
@@ -13,10 +13,12 @@ Read [gh-recipes.md](gh-recipes.md) before step 1. It holds every `gh` and `git`
 
 ## 1. Build the queue
 
-- **PR numbers or URLs in the arguments**: those PRs are the queue.
-- **No PR arguments**: every open, non-draft PR in this repo where the user's review is requested.
+The **repo** is the git repository that contains the current directory, with its GitHub remote. When the current directory is outside one, the run ends there: report "not in a GitHub repo".
 
-A **frontend file** is a path inside the repo's client workspace: the directory tree that holds the web and mobile apps and the packages they share. Settle that root once from the repo layout and use it for every PR in the run.
+- **PR numbers or URLs in the arguments**: those PRs are the queue.
+- **No PR arguments**: every open, non-draft PR in the repo where the user's review is requested.
+
+A **frontend file** is a path inside the repo's client workspace: the directory tree that holds the web and mobile apps and the packages they share. In a repo that is all frontend, that is every path. Settle the workspace once from the repo layout and use it for every PR in the run.
 
 For each PR in the queue read its state, the head commit, the head and base branches, the changed paths and the user's own reviews. Then settle it as **review**, **re-review** or **skip**, by the first row that fits:
 
@@ -25,6 +27,7 @@ For each PR in the queue read its state, the head commit, the head and base bran
 | Closed or merged | skip: not open |
 | The user wrote it | skip: own PR |
 | No frontend files changed | skip: no frontend changes |
+| The user's approval stands | skip: already approved |
 | The user has an unsubmitted review on it, and this run posts | skip: unsubmitted review in the way |
 | The user's latest submitted review is on the head commit | skip: reviewed at head |
 | Earlier review exists, and every commit since it is a merge of the base branch | skip: only base merges since review |
